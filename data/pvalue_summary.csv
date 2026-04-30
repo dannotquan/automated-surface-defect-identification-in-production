@@ -1,0 +1,4 @@
+comparison,test,p_value,significant,source,notes
+Competitive models excluding YOLOv8n-DD,one-way ANOVA,0.0022,true,Lema et al. 2025 Table 4 and Results discussion,Matches ANOVA computed from the non-DefectDef model fold scores in Table 4.
+YOLOv5m vs YOLOv10n,Tukey HSD,0.0386,true,Lema et al. 2025 Results and discussion,YOLOv5m significantly outperforms YOLOv10n on NEU under the paper protocol.
+YOLOv5m vs YOLOv10s,Tukey HSD,0.0273,true,Lema et al. 2025 Results and discussion,YOLOv5m significantly outperforms YOLOv10s on NEU under the paper protocol.

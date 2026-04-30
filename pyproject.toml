@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surface-defect-benchmark"
+version = "0.1.0"
+description = "Report-supporting surface defect detection benchmark analysis and optional YOLO fold utilities."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib>=3.8",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+yolo = ["ultralytics>=8.3"]
+
+[project.scripts]
+surface-defect-benchmark = "surface_defect_benchmark.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["surface_defect_benchmark*"]
+

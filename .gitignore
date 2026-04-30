@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Large/local experiment artifacts
+NEU-DET/
+runs/
+models/
+*.pt
+*.zip
+
+# OS/editor files
+.DS_Store
+.vscode/

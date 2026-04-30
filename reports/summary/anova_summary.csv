@@ -1,0 +1,3 @@
+comparison_set,f_statistic,p_value,n_groups,n_observations,significant_at_0_05
+All models including YOLOv8n-DD,84.96268008538568,2.0984436462958729e-41,23,92,True
+All models excluding YOLOv8n-DD,2.527847049044057,0.0022418304082821904,22,88,True

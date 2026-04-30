@@ -1,0 +1,5 @@
+test_percent,train_percent,ap50,source
+20,80,0.780,Lema et al. 2025 Table 2
+25,75,0.766,Lema et al. 2025 Table 2
+30,70,0.736,Lema et al. 2025 Table 2
+
