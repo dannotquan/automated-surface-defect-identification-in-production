@@ -3,6 +3,7 @@
   --bg: #f4f6f8;
   --panel: #ffffff;
   --panel-2: #eef3f7;
+  --panel-3: #f8fafb;
   --ink: #17212b;
   --muted: #5d6b78;
   --line: #d6dee6;
@@ -47,7 +48,8 @@ select {
 
 .controls,
 .strip-panel,
-.chart-panel {
+.chart-panel,
+.ops-strip {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -158,9 +160,73 @@ select {
   font-size: 1.16rem;
 }
 
+.decision-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.decision-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 6px;
+  background: var(--panel-3);
+}
+
+.decision-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.decision-card strong {
+  font-size: 0.98rem;
+}
+
+.decision-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .inspection {
   display: grid;
   gap: 18px;
+}
+
+.ops-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+}
+
+.ops-strip div {
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+}
+
+.ops-strip div:last-child {
+  border-right: 0;
+}
+
+.ops-strip span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ops-strip strong {
+  align-self: end;
+  font-size: 1rem;
 }
 
 .strip-panel {
@@ -337,14 +403,64 @@ canvas {
   line-height: 1.45;
 }
 
+.insight-panel {
+  grid-column: 1 / -1;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.insight-grid div {
+  display: grid;
+  gap: 8px;
+  min-height: 82px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-3);
+}
+
+.insight-grid span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.insight-grid strong {
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+
+.insight-panel p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 980px) {
   .workspace,
-  .analysis-grid {
+  .analysis-grid,
+  .ops-strip,
+  .insight-grid {
     grid-template-columns: 1fr;
   }
 
   .controls {
     min-height: auto;
+  }
+
+  .ops-strip div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .ops-strip div:last-child {
+    border-bottom: 0;
   }
 }
 
@@ -361,4 +477,3 @@ canvas {
     grid-template-columns: 92px minmax(70px, 1fr) 48px;
   }
 }
-

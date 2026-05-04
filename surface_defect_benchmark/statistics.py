@@ -36,25 +36,40 @@ def one_way_anova(models: pd.DataFrame, label: str) -> AnovaResult:
     )
 
 
+def eta_squared(models: pd.DataFrame) -> float:
+    """Return one-way ANOVA eta-squared effect size for fold AP50 groups."""
+    _, groups = model_groups(models)
+    values = np.concatenate(groups)
+    grand_mean = values.mean()
+    between = sum(len(group) * (group.mean() - grand_mean) ** 2 for group in groups)
+    total = sum((value - grand_mean) ** 2 for value in values)
+    return float(between / total) if total else 0.0
+
+
 def anova_summary(models: pd.DataFrame) -> pd.DataFrame:
-    all_models = one_way_anova(models, "All models including YOLOv8n-DD")
-    without_defectdef = one_way_anova(
-        models[models["model"] != "YOLOv8n-DD"].reset_index(drop=True),
-        "All models excluding YOLOv8n-DD",
-    )
-    return pd.DataFrame(
-        [
+    comparison_sets = [
+        ("All models including YOLOv8n-DD", models),
+        (
+            "All models excluding YOLOv8n-DD",
+            models[models["model"] != "YOLOv8n-DD"].reset_index(drop=True),
+        ),
+    ]
+    rows = []
+    for label, frame in comparison_sets:
+        result = one_way_anova(frame, label)
+        rows.append(
             {
                 "comparison_set": result.label,
                 "f_statistic": result.f_statistic,
                 "p_value": result.p_value,
+                "eta_squared": eta_squared(frame),
                 "n_groups": result.n_groups,
                 "n_observations": result.n_observations,
                 "significant_at_0_05": result.p_value < 0.05,
             }
-            for result in (all_models, without_defectdef)
-        ]
-    )
+        )
+
+    return pd.DataFrame(rows)
 
 
 def tukey_hsd_summary(models: pd.DataFrame, include_defectdef: bool = False) -> pd.DataFrame:
@@ -84,4 +99,3 @@ def tukey_hsd_summary(models: pd.DataFrame, include_defectdef: bool = False) -> 
             )
 
     return pd.DataFrame(rows).sort_values(["p_value", "model_a", "model_b"]).reset_index(drop=True)
-

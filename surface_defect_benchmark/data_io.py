@@ -38,6 +38,18 @@ def validate_model_table(models: pd.DataFrame, tolerance: float = 0.002) -> None
     if missing:
         raise ValueError(f"model_fold_ap50.csv is missing columns: {sorted(missing)}")
 
+    numeric_columns = ["mean_ap50", *fold_columns()]
+    non_numeric = [column for column in numeric_columns if not pd.api.types.is_numeric_dtype(models[column])]
+    if non_numeric:
+        raise ValueError(f"model_fold_ap50.csv has non-numeric metric columns: {non_numeric}")
+
+    out_of_range = models.loc[
+        ~models[numeric_columns].apply(lambda column: column.between(0, 1)).all(axis=1),
+        "model",
+    ].tolist()
+    if out_of_range:
+        raise ValueError(f"AP50 values must be between 0 and 1 for: {out_of_range}")
+
     calculated = models[fold_columns()].mean(axis=1)
     declared = models["mean_ap50"]
     bad = models.loc[(calculated - declared).abs() > tolerance, "model"].tolist()

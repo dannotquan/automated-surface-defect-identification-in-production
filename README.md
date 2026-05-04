@@ -18,7 +18,7 @@ The main reference is Lema, Sanchez-Gonzalez, Usamentiaga, and delaCalle (2025),
 - `data/`: AP50 result tables and p-value summary used for reproducible analysis.
 - `reports/summary/`: generated CSV summaries for rankings, ANOVA, and Tukey HSD.
 - `reports/figures/`: generated figures for AP50 split sensitivity, fold variation, model means, and p-values.
-- `mini_app/`: static browser app for exploring the benchmark workflow and model comparison results.
+- `mini_app/`: static browser app for exploring benchmark results through an industrial quality-control dashboard.
 - `scripts/`: optional NEU dataset preparation, YOLO fold training, and YOLO run aggregation scripts.
 - `tests/`: unit tests for data loading, statistics, annotation conversion, and fold creation.
 
@@ -83,6 +83,7 @@ python scripts/evaluate_yolo_folds.py --runs-dir runs --output reports/summary/y
 - Main metric: AP50, average precision at IoU 0.50.
 - Evaluation design: four-fold stratified cross-validation using 75% training and 25% testing in each fold.
 - Statistical analysis: one-way ANOVA to test whether group differences exist, followed by Tukey HSD for model-pair comparisons.
+- Effect size: eta-squared is included with ANOVA results to show how much AP50 variation is explained by model choice.
 
 The computer vision framing also follows course concepts on detection, small datasets, feature hierarchies, augmentation, pretrained models, and fine-tuning.
 

@@ -99,6 +99,15 @@ const splitAp50 = document.querySelector("#splitAp50");
 const statusPill = document.querySelector("#statusPill");
 const inspectionEyebrow = document.querySelector("#inspectionEyebrow");
 const inspectionTitle = document.querySelector("#inspectionTitle");
+const inspectionAction = document.querySelector("#inspectionAction");
+const inspectionReason = document.querySelector("#inspectionReason");
+const stabilityScore = document.querySelector("#stabilityScore");
+const stabilityReason = document.querySelector("#stabilityReason");
+const riskLevel = document.querySelector("#riskLevel");
+const fnImpact = document.querySelector("#fnImpact");
+const fpImpact = document.querySelector("#fpImpact");
+const deploymentStance = document.querySelector("#deploymentStance");
+const engineeringNote = document.querySelector("#engineeringNote");
 const canvas = document.querySelector("#defectCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -127,6 +136,68 @@ function modelTier(model) {
   if (model.mean < 0.74) return "low";
   if (model.mean < 0.75) return "moderate";
   return "strong";
+}
+
+function foldSpread(model) {
+  return Math.max(...model.folds) - Math.min(...model.folds);
+}
+
+function benchmarkDecision(model, split) {
+  const tier = modelTier(model);
+  const spread = foldSpread(model);
+
+  if (tier === "weak") {
+    return {
+      action: "Do not deploy",
+      reason: "Mean AP50 is far below the competitive models and missed-defect risk is high.",
+      risk: "High escape risk",
+      fn: "Likely missed defects",
+      fp: "Unstable review load",
+      stance: "Research baseline only",
+      note: "This model is useful as a contrast case, not as a manufacturing inspection candidate.",
+    };
+  }
+
+  if (tier === "low" || split.strictness === "stricter") {
+    return {
+      action: "Engineering review",
+      reason: "Model performance is usable for comparison, but split sensitivity or lower AP50 warrants review.",
+      risk: "Moderate process risk",
+      fn: "Small defects need review",
+      fp: "May increase rework",
+      stance: "Pilot with controls",
+      note: "Use fold-level results and human inspection before any production decision.",
+    };
+  }
+
+  if (spread <= 0.018 && model.mean >= 0.756) {
+    return {
+      action: "Benchmark candidate",
+      reason: "Mean AP50 and fold stability are competitive under the cross-validation protocol.",
+      risk: "Controlled benchmark risk",
+      fn: "Monitor rare defects",
+      fp: "Manageable review load",
+      stance: "Decision support",
+      note: "This model is a strong candidate for prototype evaluation, with human quality review retained.",
+    };
+  }
+
+  return {
+    action: "Compare before pilot",
+    reason: "Mean AP50 is competitive, but fold-to-fold spread should be considered in model selection.",
+    risk: "Partition-sensitive risk",
+    fn: "Validate on new lots",
+    fp: "Track review burden",
+    stance: "Decision support",
+    note: "Prefer statistically supported comparisons over a single AP50 ranking.",
+  };
+}
+
+function describeStability(model) {
+  const spread = foldSpread(model);
+  if (spread <= 0.018) return "Stable across folds";
+  if (spread <= 0.035) return "Moderate fold variation";
+  return "High fold variation";
 }
 
 function setupControls() {
@@ -401,6 +472,8 @@ function update() {
   const inspectionCase = selectedCase();
   const tier = modelTier(model);
   const weak = tier === "weak";
+  const decision = benchmarkDecision(model, split);
+  const spread = foldSpread(model);
 
   foldAp50.textContent = format(model.folds[state.fold - 1]);
   meanAp50.textContent = format(model.mean);
@@ -412,6 +485,15 @@ function update() {
   inspectionTitle.textContent = weak
     ? `${inspectionCase.title}: lower-confidence boxes and missed defect`
     : `${inspectionCase.title}: predicted defect boxes`;
+  inspectionAction.textContent = decision.action;
+  inspectionReason.textContent = decision.reason;
+  stabilityScore.textContent = `${format(spread)} spread`;
+  stabilityReason.textContent = describeStability(model);
+  riskLevel.textContent = decision.risk;
+  fnImpact.textContent = decision.fn;
+  fpImpact.textContent = decision.fp;
+  deploymentStance.textContent = decision.stance;
+  engineeringNote.textContent = decision.note;
 
   [...foldSegments.children].forEach((button, index) => {
     button.setAttribute("aria-checked", String(index + 1 === state.fold));

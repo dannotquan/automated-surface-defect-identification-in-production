@@ -48,9 +48,41 @@
               <strong id="modelRank">0</strong>
             </div>
           </div>
+
+          <div class="decision-panel" aria-label="Selected model decision support">
+            <div class="decision-card">
+              <span>Inspection action</span>
+              <strong id="inspectionAction">Benchmark candidate</strong>
+              <p id="inspectionReason">Model score is evaluated across folds before deployment.</p>
+            </div>
+            <div class="decision-card">
+              <span>Fold stability</span>
+              <strong id="stabilityScore">0.000 spread</strong>
+              <p id="stabilityReason">Lower spread means the benchmark is less sensitive to one partition.</p>
+            </div>
+          </div>
         </aside>
 
         <section class="inspection" aria-label="Inspection and analysis panels">
+          <div class="ops-strip" aria-label="Industrial engineering benchmark summary">
+            <div>
+              <span>Dataset</span>
+              <strong>NEU-DET</strong>
+            </div>
+            <div>
+              <span>Task</span>
+              <strong>Object detection</strong>
+            </div>
+            <div>
+              <span>Protocol</span>
+              <strong>4-fold stratified CV</strong>
+            </div>
+            <div>
+              <span>Decision metric</span>
+              <strong>AP50 + Tukey HSD</strong>
+            </div>
+          </div>
+
           <div class="strip-panel">
             <div class="panel-header">
               <div>
@@ -84,6 +116,28 @@
                 </div>
                 <p>Competitive model differences are statistically significant at p &lt; 0.05; Tukey HSD identifies YOLOv5m as significantly better than YOLOv10n and YOLOv10s.</p>
               </div>
+            </section>
+
+            <section class="chart-panel insight-panel" aria-label="Quality engineering interpretation">
+              <div class="panel-header compact">
+                <h2>Quality Interpretation</h2>
+                <span id="riskLevel">Moderate risk</span>
+              </div>
+              <div class="insight-grid">
+                <div>
+                  <span>False negative impact</span>
+                  <strong id="fnImpact">Defects may escape inspection</strong>
+                </div>
+                <div>
+                  <span>False positive impact</span>
+                  <strong id="fpImpact">Extra review or rework</strong>
+                </div>
+                <div>
+                  <span>Deployment stance</span>
+                  <strong id="deploymentStance">Decision support</strong>
+                </div>
+              </div>
+              <p id="engineeringNote">The preferred model should balance mean AP50, fold stability, and statistical evidence rather than relying on one split.</p>
             </section>
           </div>
         </section>
