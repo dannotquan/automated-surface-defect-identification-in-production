@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surface Defect Benchmark Explorer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="Surface defect benchmark explorer">
+        <aside class="controls" aria-label="Benchmark controls">
+          <div class="brand">
+            <p class="eyebrow">NEU surface defect benchmark</p>
+            <h1>Detection Model Explorer</h1>
+          </div>
+
+          <label class="control-group" for="modelSelect">
+            <span>Model</span>
+            <select id="modelSelect"></select>
+          </label>
+
+          <fieldset class="control-group">
+            <legend>Fold</legend>
+            <div class="segments" id="foldSegments" role="radiogroup" aria-label="Cross-validation fold"></div>
+          </fieldset>
+
+          <label class="control-group" for="splitSelect">
+            <span>Train / test split</span>
+            <select id="splitSelect">
+              <option value="80/20">80 / 20</option>
+              <option value="75/25" selected>75 / 25</option>
+              <option value="70/30">70 / 30</option>
+            </select>
+          </label>
+
+          <div class="metric-stack" aria-label="Selected benchmark metrics">
+            <div class="metric-row">
+              <span>Fold AP50</span>
+              <strong id="foldAp50">0.000</strong>
+            </div>
+            <div class="metric-row">
+              <span>Mean AP50</span>
+              <strong id="meanAp50">0.000</strong>
+            </div>
+            <div class="metric-row">
+              <span>Model rank</span>
+              <strong id="modelRank">0</strong>
+            </div>
+          </div>
+        </aside>
+
+        <section class="inspection" aria-label="Inspection and analysis panels">
+          <div class="strip-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">illustrative inspection frame</p>
+                <h2 id="inspectionTitle">Steel surface with predicted defect boxes</h2>
+              </div>
+              <span class="status-pill" id="statusPill">competitive</span>
+            </div>
+            <canvas id="defectCanvas" width="960" height="520" aria-label="Illustrative steel surface with detection boxes"></canvas>
+          </div>
+
+          <div class="analysis-grid">
+            <section class="chart-panel" aria-label="Mean AP50 model ranking">
+              <div class="panel-header compact">
+                <h2>Mean AP50 by Model</h2>
+                <span id="bestModelLabel">Best: YOLOv5m</span>
+              </div>
+              <div id="modelBars" class="bar-chart"></div>
+            </section>
+
+            <section class="chart-panel" aria-label="Split and significance summary">
+              <div class="panel-header compact">
+                <h2>Split Sensitivity</h2>
+                <span id="splitAp50">AP50 0.766</span>
+              </div>
+              <div id="splitBars" class="split-chart"></div>
+              <div class="significance">
+                <div>
+                  <span>ANOVA p-value</span>
+                  <strong>0.0022</strong>
+                </div>
+                <p>Competitive model differences are statistically significant at p &lt; 0.05; Tukey HSD identifies YOLOv5m as significantly better than YOLOv10n and YOLOv10s.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+

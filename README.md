@@ -18,6 +18,7 @@ The main reference is Lema, Sanchez-Gonzalez, Usamentiaga, and delaCalle (2025),
 - `data/`: AP50 result tables and p-value summary used for reproducible analysis.
 - `reports/summary/`: generated CSV summaries for rankings, ANOVA, and Tukey HSD.
 - `reports/figures/`: generated figures for AP50 split sensitivity, fold variation, model means, and p-values.
+- `mini_app/`: static browser app for exploring the benchmark workflow and model comparison results.
 - `scripts/`: optional NEU dataset preparation, YOLO fold training, and YOLO run aggregation scripts.
 - `tests/`: unit tests for data loading, statistics, annotation conversion, and fold creation.
 
@@ -39,6 +40,10 @@ The analysis command reads CSV files in `data/` and writes:
 - `reports/figures/graph2_ap50_by_fold.png`
 - `reports/figures/graph3_mean_ap50_by_model.png`
 - `reports/figures/graph4_pvalues.png`
+
+## Mini App
+
+Open `mini_app/index.html` in a browser to interact with the benchmark results. The app illustrates a steel-surface inspection frame, fold-level AP50 scores, model rankings, split sensitivity, and the statistical significance result.
 
 ## Optional Dataset Preparation
 
