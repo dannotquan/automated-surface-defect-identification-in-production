@@ -44,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Figures: {result.figure_dir}")
         print(f"Top model by mean AP50: {result.top_model} ({result.top_ap50:.3f})")
         print(f"ANOVA excluding YOLOv8n-DD: p = {result.anova_p_value:.4f}")
+        print(f"Effect size excluding YOLOv8n-DD: eta-squared = {result.anova_eta_squared:.3f}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")

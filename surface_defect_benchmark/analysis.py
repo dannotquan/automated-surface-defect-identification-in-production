@@ -17,6 +17,7 @@ class AnalysisResult:
     top_model: str
     top_ap50: float
     anova_p_value: float
+    anova_eta_squared: float
 
 
 def load_inputs(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -58,4 +59,5 @@ def run_analysis(data_dir: Path = Path("data"), output_dir: Path = Path("reports
         top_model=str(top["model"]),
         top_ap50=float(top["mean_ap50"]),
         anova_p_value=float(competitive_anova["p_value"]),
+        anova_eta_squared=float(competitive_anova["eta_squared"]),
     )
