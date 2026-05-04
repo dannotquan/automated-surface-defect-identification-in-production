@@ -25,9 +25,60 @@ const models = [
 ];
 
 const splits = [
-  { label: "80 / 20", key: "80/20", ap50: 0.78 },
-  { label: "75 / 25", key: "75/25", ap50: 0.766 },
-  { label: "70 / 30", key: "70/30", ap50: 0.736 },
+  { label: "80 / 20", key: "80/20", ap50: 0.78, confidenceShift: 0.04, strictness: "optimistic" },
+  { label: "75 / 25", key: "75/25", ap50: 0.766, confidenceShift: 0, strictness: "baseline" },
+  { label: "70 / 30", key: "70/30", ap50: 0.736, confidenceShift: -0.06, strictness: "stricter" },
+];
+
+const inspectionCases = [
+  {
+    fold: 1,
+    eyebrow: "fold 1 case: scratch and patch",
+    title: "Long scratch with patch defect",
+    background: ["#cdd5dc", "#eef3f5", "#b9c4cc"],
+    texture: "horizontal",
+    defects: [
+      { kind: "scratch", x: 126, y: 116, w: 270, h: 34, color: "#873f3f", shape: "slash", rotation: -0.08, baseConfidence: 0.86 },
+      { kind: "patch", x: 616, y: 88, w: 156, h: 104, color: "#735b42", shape: "blob", baseConfidence: 0.81 },
+      { kind: "inclusion", x: 438, y: 314, w: 124, h: 82, color: "#354c60", shape: "blob", baseConfidence: 0.76 },
+    ],
+  },
+  {
+    fold: 2,
+    eyebrow: "fold 2 case: pitted surface",
+    title: "Clustered pitting with small inclusions",
+    background: ["#d3d6d0", "#f3f4ef", "#b8beb7"],
+    texture: "speckled",
+    defects: [
+      { kind: "pitted_surface", x: 176, y: 112, w: 118, h: 92, color: "#5f5347", shape: "pits", baseConfidence: 0.8 },
+      { kind: "pitted_surface", x: 492, y: 282, w: 150, h: 96, color: "#62584c", shape: "pits", baseConfidence: 0.78 },
+      { kind: "inclusion", x: 708, y: 126, w: 84, h: 66, color: "#405669", shape: "blob", baseConfidence: 0.74 },
+    ],
+  },
+  {
+    fold: 3,
+    eyebrow: "fold 3 case: rolled-in scale",
+    title: "Rolled-in scale and subtle crazing",
+    background: ["#c9d0d4", "#f2f4f6", "#aeb8bf"],
+    texture: "diagonal",
+    defects: [
+      { kind: "rolled-in_scale", x: 150, y: 270, w: 292, h: 62, color: "#4f5960", shape: "band", rotation: 0.05, baseConfidence: 0.77 },
+      { kind: "crazing", x: 584, y: 118, w: 188, h: 112, color: "#6f4b4b", shape: "cracks", baseConfidence: 0.72 },
+      { kind: "scratch", x: 520, y: 372, w: 220, h: 30, color: "#854747", shape: "slash", rotation: 0.1, baseConfidence: 0.73 },
+    ],
+  },
+  {
+    fold: 4,
+    eyebrow: "fold 4 case: mixed small defects",
+    title: "Small defects with lower fold AP50",
+    background: ["#cfd3d4", "#f5f6f4", "#b6bab9"],
+    texture: "vertical",
+    defects: [
+      { kind: "inclusion", x: 226, y: 142, w: 82, h: 70, color: "#3d5161", shape: "blob", baseConfidence: 0.72 },
+      { kind: "patch", x: 658, y: 252, w: 132, h: 84, color: "#705a43", shape: "blob", baseConfidence: 0.7 },
+      { kind: "crazing", x: 390, y: 300, w: 168, h: 104, color: "#704948", shape: "cracks", baseConfidence: 0.67 },
+    ],
+  },
 ];
 
 const state = {
@@ -46,6 +97,7 @@ const modelBars = document.querySelector("#modelBars");
 const splitBars = document.querySelector("#splitBars");
 const splitAp50 = document.querySelector("#splitAp50");
 const statusPill = document.querySelector("#statusPill");
+const inspectionEyebrow = document.querySelector("#inspectionEyebrow");
 const inspectionTitle = document.querySelector("#inspectionTitle");
 const canvas = document.querySelector("#defectCanvas");
 const ctx = canvas.getContext("2d");
@@ -60,6 +112,21 @@ function selectedModel() {
 
 function modelRankNumber(name) {
   return models.findIndex((model) => model.name === name) + 1;
+}
+
+function selectedSplit() {
+  return splits.find((item) => item.key === state.split);
+}
+
+function selectedCase() {
+  return inspectionCases.find((item) => item.fold === state.fold);
+}
+
+function modelTier(model) {
+  if (model.name === "YOLOv8n-DD") return "weak";
+  if (model.mean < 0.74) return "low";
+  if (model.mean < 0.75) return "moderate";
+  return "strong";
 }
 
 function setupControls() {
@@ -95,67 +162,162 @@ function setupControls() {
   });
 }
 
-function drawSteelSurface(model) {
+function drawSteelSurface(model, split, inspectionCase) {
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#cfd6dc");
-  gradient.addColorStop(0.5, "#eef2f4");
-  gradient.addColorStop(1, "#b9c2ca");
+  gradient.addColorStop(0, inspectionCase.background[0]);
+  gradient.addColorStop(0.5, inspectionCase.background[1]);
+  gradient.addColorStop(1, inspectionCase.background[2]);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  for (let y = 24; y < height; y += 28) {
-    ctx.strokeStyle = `rgba(60, 72, 82, ${y % 56 === 0 ? 0.15 : 0.08})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, y + Math.sin(y) * 4);
-    ctx.bezierCurveTo(width * 0.25, y - 8, width * 0.65, y + 12, width, y - 3);
-    ctx.stroke();
-  }
+  drawSurfaceTexture(inspectionCase.texture, width, height);
 
-  const defects = [
-    { label: "scratch", x: 126, y: 116, w: 260, h: 36, color: "#873f3f" },
-    { label: "patch", x: 616, y: 88, w: 156, h: 104, color: "#735b42" },
-    { label: "inclusion", x: 438, y: 314, w: 124, h: 82, color: "#354c60" },
-  ];
+  inspectionCase.defects.forEach((defect) => drawDefect(defect));
 
-  defects.forEach((defect, index) => {
-    ctx.save();
-    ctx.globalAlpha = 0.68;
-    ctx.fillStyle = defect.color;
-    if (index === 0) {
-      ctx.translate(defect.x, defect.y);
-      ctx.rotate(-0.08);
-      ctx.fillRect(0, 0, defect.w, defect.h);
-      ctx.restore();
-    } else {
-      roundedRect(defect.x, defect.y, defect.w, defect.h, 18);
-      ctx.fill();
-      ctx.restore();
-    }
-  });
-
-  const weak = model.name === "YOLOv8n-DD";
-  const boxes = weak
-    ? [
-        { label: "scratch 0.54", x: 112, y: 94, w: 220, h: 72 },
-        { label: "patch 0.41", x: 584, y: 68, w: 126, h: 82 },
-      ]
-    : [
-        { label: "scratch 0.87", x: 112, y: 92, w: 292, h: 78 },
-        { label: "patch 0.82", x: 596, y: 70, w: 196, h: 142 },
-        { label: "inclusion 0.76", x: 420, y: 292, w: 162, h: 126 },
-      ];
-
-  boxes.forEach((box) => drawDetectionBox(box, weak));
+  const boxes = detectionsFor(model, split, inspectionCase);
+  boxes.forEach((box) => drawDetectionBox(box));
 
   ctx.fillStyle = "rgba(23, 33, 43, 0.84)";
-  ctx.fillRect(18, height - 58, 360, 38);
+  ctx.fillRect(18, height - 62, 474, 42);
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 18px system-ui, sans-serif";
-  ctx.fillText(`${model.name} | fold ${state.fold} | AP50 ${format(model.folds[state.fold - 1])}`, 34, height - 33);
+  ctx.fillText(
+    `${model.name} | fold ${state.fold} | ${split.label} split | AP50 ${format(model.folds[state.fold - 1])}`,
+    34,
+    height - 35,
+  );
+}
+
+function drawSurfaceTexture(texture, width, height) {
+  if (texture === "speckled") {
+    for (let i = 0; i < 260; i += 1) {
+      const x = (i * 47) % width;
+      const y = (i * 83) % height;
+      ctx.fillStyle = `rgba(45, 55, 62, ${0.04 + (i % 4) * 0.018})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1 + (i % 4), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  const diagonal = texture === "diagonal";
+  const vertical = texture === "vertical";
+  for (let i = -height; i < width + height; i += 30) {
+    ctx.strokeStyle = `rgba(60, 72, 82, ${i % 60 === 0 ? 0.15 : 0.08})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (vertical) {
+      ctx.moveTo(i + height, 0);
+      ctx.bezierCurveTo(i + height - 10, height * 0.3, i + height + 12, height * 0.72, i + height - 4, height);
+    } else if (diagonal) {
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + height, height);
+    } else {
+      const y = i + height;
+      ctx.moveTo(0, y + Math.sin(y) * 4);
+      ctx.bezierCurveTo(width * 0.25, y - 8, width * 0.65, y + 12, width, y - 3);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawDefect(defect) {
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = defect.color;
+  ctx.strokeStyle = defect.color;
+  ctx.lineWidth = 5;
+
+  if (defect.shape === "slash") {
+    ctx.translate(defect.x, defect.y);
+    ctx.rotate(defect.rotation || 0);
+    ctx.fillRect(0, 0, defect.w, defect.h);
+  } else if (defect.shape === "band") {
+    ctx.translate(defect.x, defect.y);
+    ctx.rotate(defect.rotation || 0);
+    roundedRect(0, 0, defect.w, defect.h, 18);
+    ctx.fill();
+    for (let x = 18; x < defect.w; x += 42) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.beginPath();
+      ctx.moveTo(x, 8);
+      ctx.lineTo(x + 22, defect.h - 10);
+      ctx.stroke();
+    }
+  } else if (defect.shape === "pits") {
+    roundedRect(defect.x, defect.y, defect.w, defect.h, 20);
+    ctx.fill();
+    ctx.fillStyle = "rgba(20, 26, 30, 0.4)";
+    for (let i = 0; i < 16; i += 1) {
+      const x = defect.x + 12 + ((i * 23) % Math.max(24, defect.w - 24));
+      const y = defect.y + 12 + ((i * 31) % Math.max(24, defect.h - 24));
+      ctx.beginPath();
+      ctx.arc(x, y, 3 + (i % 4), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (defect.shape === "cracks") {
+    ctx.strokeStyle = defect.color;
+    for (let i = 0; i < 7; i += 1) {
+      const startX = defect.x + 12 + i * 22;
+      const startY = defect.y + 14 + (i % 3) * 20;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX + 22, startY + 14);
+      ctx.lineTo(startX + 44, startY + 2);
+      ctx.lineTo(startX + 66, startY + 24);
+      ctx.stroke();
+    }
+  } else {
+    roundedRect(defect.x, defect.y, defect.w, defect.h, 18);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function detectionsFor(model, split, inspectionCase) {
+  const tier = modelTier(model);
+  const foldScore = model.folds[state.fold - 1];
+  const foldShift = (foldScore - model.mean) * 1.2;
+  const modelShift = model.mean >= 0.76 ? 0.04 : model.mean >= 0.75 ? 0.02 : model.mean >= 0.74 ? -0.02 : -0.05;
+  const shouldMissLast = tier === "weak" || (tier === "low" && split.strictness === "stricter");
+
+  const detections = inspectionCase.defects
+    .filter((_, index) => !(shouldMissLast && index === inspectionCase.defects.length - 1))
+    .map((defect, index) => {
+      const weakOffset = tier === "weak" ? 22 : tier === "low" ? 10 : 0;
+      const splitOffset = split.strictness === "stricter" ? 7 : split.strictness === "optimistic" ? -4 : 0;
+      const confidence = clamp(defect.baseConfidence + split.confidenceShift + modelShift + foldShift - index * 0.015, 0.32, 0.94);
+      return {
+        label: `${defect.kind} ${format(confidence)}`,
+        x: defect.x - 14 + weakOffset + splitOffset,
+        y: defect.y - 18 + weakOffset * 0.5,
+        w: defect.w + 30 - weakOffset * 0.65,
+        h: defect.h + 38 - weakOffset * 0.45,
+        quality: tier === "weak" ? "weak" : confidence < 0.68 ? "uncertain" : "good",
+      };
+    });
+
+  if (tier === "weak" || (split.strictness === "stricter" && tier !== "strong")) {
+    detections.push({
+      label: tier === "weak" ? "false alarm 0.39" : "possible pit 0.58",
+      x: 752,
+      y: 344,
+      w: 94,
+      h: 72,
+      quality: "false",
+    });
+  }
+
+  return detections;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function roundedRect(x, y, width, height, radius) {
@@ -171,8 +333,8 @@ function roundedRect(x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
 }
 
-function drawDetectionBox(box, weak) {
-  const color = weak ? "#b54646" : "#2f8c62";
+function drawDetectionBox(box) {
+  const color = box.quality === "weak" || box.quality === "false" ? "#b54646" : box.quality === "uncertain" ? "#a46a25" : "#2f8c62";
   ctx.strokeStyle = color;
   ctx.lineWidth = 4;
   ctx.strokeRect(box.x, box.y, box.w, box.h);
@@ -235,18 +397,21 @@ function renderSplitBars() {
 
 function update() {
   const model = selectedModel();
-  const weak = model.name === "YOLOv8n-DD";
-  const split = splits.find((item) => item.key === state.split);
+  const split = selectedSplit();
+  const inspectionCase = selectedCase();
+  const tier = modelTier(model);
+  const weak = tier === "weak";
 
   foldAp50.textContent = format(model.folds[state.fold - 1]);
   meanAp50.textContent = format(model.mean);
   modelRank.textContent = `#${modelRankNumber(model.name)}`;
   splitAp50.textContent = `AP50 ${format(split.ap50)}`;
-  statusPill.textContent = weak ? "underperforming" : "competitive";
+  inspectionEyebrow.textContent = `${inspectionCase.eyebrow} | ${split.strictness} split`;
+  statusPill.textContent = weak ? "underperforming" : tier === "low" ? "lower tier" : "competitive";
   statusPill.classList.toggle("weak", weak);
   inspectionTitle.textContent = weak
-    ? "Lower-confidence defect boxes and missed inclusion"
-    : "Steel surface with predicted defect boxes";
+    ? `${inspectionCase.title}: lower-confidence boxes and missed defect`
+    : `${inspectionCase.title}: predicted defect boxes`;
 
   [...foldSegments.children].forEach((button, index) => {
     button.setAttribute("aria-checked", String(index + 1 === state.fold));
@@ -254,9 +419,8 @@ function update() {
 
   renderModelBars();
   renderSplitBars();
-  drawSteelSurface(model);
+  drawSteelSurface(model, split, inspectionCase);
 }
 
 setupControls();
 update();
-
