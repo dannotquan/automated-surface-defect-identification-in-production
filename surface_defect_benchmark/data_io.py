@@ -34,9 +34,16 @@ def fold_columns() -> list[str]:
 
 
 def validate_model_table(models: pd.DataFrame, tolerance: float = 0.002) -> None:
+    if models.empty:
+        raise ValueError("model_fold_ap50.csv does not contain any model rows.")
+
     missing = {"model", "mean_ap50", *fold_columns()} - set(models.columns)
     if missing:
         raise ValueError(f"model_fold_ap50.csv is missing columns: {sorted(missing)}")
+
+    duplicates = models.loc[models["model"].duplicated(), "model"].tolist()
+    if duplicates:
+        raise ValueError(f"model_fold_ap50.csv has duplicate model names: {duplicates}")
 
     numeric_columns = ["mean_ap50", *fold_columns()]
     non_numeric = [column for column in numeric_columns if not pd.api.types.is_numeric_dtype(models[column])]

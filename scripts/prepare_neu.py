@@ -18,6 +18,8 @@ CLASS_TO_ID = {
     "scratches": 5,
 }
 
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
+
 
 def class_id(name: str) -> int:
     normalized = name.strip()
@@ -44,9 +46,22 @@ def voc_box_to_yolo(
     )
 
 
-def convert_xml_annotation(xml_path: Path, label_path: Path, image_width: int = 200, image_height: int = 200) -> None:
+def image_size_from_xml(root: ET.Element, default_width: int = 200, default_height: int = 200) -> tuple[int, int]:
+    size = root.find("size")
+    if size is None:
+        return default_width, default_height
+
+    width = int(float(size.findtext("width", str(default_width))))
+    height = int(float(size.findtext("height", str(default_height))))
+    if width <= 0 or height <= 0:
+        raise ValueError(f"Invalid image size in XML annotation: {(width, height)}")
+    return width, height
+
+
+def convert_xml_annotation(xml_path: Path, label_path: Path) -> None:
     tree = ET.parse(xml_path)
     root = tree.getroot()
+    image_width, image_height = image_size_from_xml(root)
     lines: list[str] = []
 
     for obj in root.findall("object"):
@@ -80,8 +95,9 @@ def normalize_kaggle_layout(dataset_dir: Path) -> None:
         image_root = dataset_dir / split / "images"
         annotation_root = dataset_dir / split / "annotations"
         if image_root.exists():
-            for image_path in image_root.rglob("*.jpg"):
-                shutil.copy2(image_path, all_images / image_path.name)
+            for image_path in image_root.rglob("*"):
+                if image_path.suffix.lower() in IMAGE_EXTENSIONS:
+                    shutil.copy2(image_path, all_images / image_path.name)
         if annotation_root.exists():
             for xml_path in annotation_root.rglob("*.xml"):
                 shutil.copy2(xml_path, all_annotations / xml_path.name)
@@ -95,9 +111,16 @@ def infer_class_from_filename(filename: str) -> str:
 
 
 def create_stratified_folds(image_names: list[str], k: int = 4, seed: int = 244) -> list[list[str]]:
+    if k < 2:
+        raise ValueError("At least two folds are required for train/test validation.")
+
     grouped: dict[str, list[str]] = defaultdict(list)
     for name in image_names:
         grouped[infer_class_from_filename(name)].append(name)
+
+    small_classes = {class_name: len(names) for class_name, names in grouped.items() if len(names) < k}
+    if small_classes:
+        raise ValueError(f"Each class needs at least {k} images. Too small: {small_classes}")
 
     rng = random.Random(seed)
     folds: list[list[str]] = [[] for _ in range(k)]
@@ -161,9 +184,9 @@ def prepare_dataset(dataset_dir: Path, config_dir: Path, folds: int = 4, seed: i
     for xml_path in sorted(annotation_dir.glob("*.xml")):
         convert_xml_annotation(xml_path, label_dir / f"{xml_path.stem}.txt")
 
-    image_names = sorted(path.name for path in image_dir.glob("*.jpg"))
+    image_names = sorted(path.name for path in image_dir.iterdir() if path.suffix.lower() in IMAGE_EXTENSIONS)
     if not image_names:
-        raise FileNotFoundError(f"No .jpg images found in {image_dir}")
+        raise FileNotFoundError(f"No supported images found in {image_dir}. Expected: {IMAGE_EXTENSIONS}")
 
     stratified_folds = create_stratified_folds(image_names, k=folds, seed=seed)
     yaml_paths: list[Path] = []
@@ -196,4 +219,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

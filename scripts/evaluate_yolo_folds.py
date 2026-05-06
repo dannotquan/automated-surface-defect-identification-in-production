@@ -16,23 +16,33 @@ DEFAULT_METRIC_COLUMNS = (
 
 
 def numeric(value: str | None) -> float | None:
-    if value is None or value == "":
+    if value is None:
+        return None
+
+    cleaned = value.strip()
+    if cleaned == "":
         return None
     try:
-        return float(value)
+        return float(cleaned)
     except ValueError:
         return None
 
 
-def best_metric_from_results_csv(path: Path, metric_column: str | None = None) -> tuple[str, float]:
+def read_results_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
-        rows = list(reader)
+        return [
+            {(key or "").strip(): (value or "").strip() for key, value in row.items()}
+            for row in reader
+        ]
 
+
+def best_metric_from_results_csv(path: Path, metric_column: str | None = None) -> tuple[str, float]:
+    rows = read_results_rows(path)
     if not rows:
         raise ValueError(f"No rows found in {path}")
 
-    columns = [metric_column] if metric_column else list(DEFAULT_METRIC_COLUMNS)
+    columns = [metric_column.strip()] if metric_column else list(DEFAULT_METRIC_COLUMNS)
     for column in columns:
         if column and column in rows[0]:
             values = [numeric(row.get(column)) for row in rows]
@@ -87,4 +97,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
